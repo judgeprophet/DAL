@@ -217,6 +217,49 @@ namespace Dal
         }
 
         /// <summary>
+        /// Retourne le ID Générer apres un Insert 
+        /// </summary>
+        /// <returns>Id Générer</returns>
+        /// <remarks> 
+        /// Syntax du Insert :INSERT INTO ... OUTPUT INSERTED.[ID_COLNAME] VALUES(..)
+        /// </remarks>
+        public int ExecuteScalar()
+        {
+            return ExecuteScalar(null);
+        }
+
+        /// <summary>
+        /// Retourne le ID Générer apres un Insert 
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns>Id Générer</returns>
+        /// <remarks> 
+        /// Syntax du Insert :INSERT INTO ... OUTPUT INSERTED.[ID_COLNAME] VALUES(..)
+        /// </remarks>        
+        public int ExecuteScalar(DbParameter[] parameters)
+        {
+            try
+            {
+                int idGenerated = 0;
+                using (SqlConnection objConn = new SqlConnection(ConnectString))
+                {
+                    objConn.Open();
+                    using (SqlCommand objCmd = new SqlCommand(CommandText, objConn))
+                    {
+                        if (parameters != null)
+                        {
+                            objCmd.Parameters.AddRange(parameters);
+                        }
+                        idGenerated = Convert.ToInt32(objCmd.ExecuteScalar());
+                    }
+                }
+                return idGenerated;
+            }
+            catch { throw; }
+        }
+
+
+        /// <summary>
         /// Creation de parametre pour la base de donnée correspondante
         /// </summary>
         /// <param name="parameterName"></param>
@@ -243,6 +286,9 @@ namespace Dal
             SqlDbType dbType;
             switch (type)
             {
+                case DbType.Decimal:
+                    dbType = SqlDbType.Decimal;
+                    break;
                 case DbType.String:
                     dbType = SqlDbType.NVarChar;
                     break;
@@ -252,13 +298,17 @@ namespace Dal
                 case DbType.DateTime:
                     dbType = SqlDbType.DateTime;
                     break;
+                case DbType.DateTime2:
+                    dbType = SqlDbType.DateTime2;
+                    break;
                 //case DbType.DateTime:
                 //    dbType = OleDbType.;
                 //    break;
 
                 default:
-                    dbType = (SqlDbType)type;
-                    break;
+                    //dbType = (SqlDbType)type;
+                    throw new Exception("CreateParameter: Type is not defined in the conversion pattern");
+                    //break;
             }
 
             SqlParameter param = new SqlParameter(parameterName, dbType, size);
